@@ -78,7 +78,7 @@ int main( int argc, char *argv[]) {
 	pool.waitEnd();
 
 	// Aggregate results
-	unsigned long in;
+	unsigned long in = 0;
 	for (unsigned long i = 0; i < NWORKERS; i++) {
 		in += results[i];
 	}
@@ -86,8 +86,8 @@ int main( int argc, char *argv[]) {
 	// Finish MC aproximation
 	double pi =  (in*4e0)/SAMPLES;
 
-	printf("Total number of samples: %u", SAMPLES);
-	printf(" of those, fell inside: %u\n\n", in);
+	printf("Total number of samples: %lu", SAMPLES);
+	printf(" of those, fell inside: %lu\n\n", in);
 
 	printf("PI: %16.15f\n", pi);
 
