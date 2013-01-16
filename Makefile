@@ -7,7 +7,7 @@ all: main
 .PHONY: main
 
 main: threadpool.h threadpool.cpp main.cpp
-	$(CC) $(CPPFLAGS) -o $@ $^
+	$(CC) $(CPPFLAGS) threadpool.cpp main.cpp -o $@
 
 clean:
 	rm -f main
