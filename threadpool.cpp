@@ -89,7 +89,7 @@ ThreadPool::~ThreadPool()
 
 void ThreadPool::initializeThreads()
 {
-	threads.resize(maxThreads);
+	threads.reserve(maxThreads);
 	for (int i = 0; i < maxThreads; ++i) {
 		pthread_t* thread = static_cast<pthread_t*>(::operator new(sizeof(pthread_t)));
 		int ret =  pthread_create(thread, NULL,
