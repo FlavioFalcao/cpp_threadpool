@@ -37,6 +37,7 @@ ThreadPool::ThreadPool(int _maxThreads)
 	if (maxThreads < 1) maxThreads=1;
 
 	incompleteWork = 0;
+	requestThreadEnd = false;
 
 	if (pthread_mutex_init(&mutexQueue, NULL))
 		printf("ERROR: Error initializing mutexQueue\n");
@@ -55,18 +56,29 @@ ThreadPool::ThreadPool(int _maxThreads)
 
 ThreadPool::~ThreadPool()
 {
-	pthread_mutex_lock(&mutexQueue);
-		std::vector<pthread_t*>::iterator it;
-		for (it = threads.begin(); it != threads.end(); it++ ) {
-			if (*it) {
-				pthread_cancel(*(*it));
-				pthread_join(*(*it), NULL);
-				//pthread_detach(*(*it));
-				delete (*it);
-			}
+	// Signal threads end request
+	requestThreadEnd = true;
+	for (int i = 0; i < maxThreads; ++i) {
+		sem_post(&availableWork);
+	}
+
+	// Join threads
+	std::vector<pthread_t*>::iterator it;
+	for (it = threads.begin(); it != threads.end(); it++ ) {
+		if (*it) {
+			//pthread_cancel(*(*it));
+			pthread_join(*(*it), NULL);
+			delete (*it);
 		}
-		threads.clear();
-	pthread_mutex_unlock(&mutexQueue);
+	}
+	threads.clear();
+
+	// Delete remaining workers in the queue
+	while(!workerQueue.empty()) {
+		ThreadPoolWorker* worker = workerQueue.front();
+		workerQueue.pop();
+		delete worker;
+	}
 
 	pthread_mutex_destroy(&mutexQueue);
 	pthread_mutex_destroy(&mutexWorkCompletion);
@@ -116,10 +128,13 @@ bool ThreadPool::enqueueWork(ThreadPoolWorker* workerThread)
 }
 
 bool ThreadPool::fetchWork(ThreadPoolWorker** workerArg)
-  /// Block the current thread (on availableWork) until some work is
-  /// available, then extract it from the queue and return it in workerArg
+  /// Block the current thread (on availableWork) until some work is available
+  /// Writes the worker to workerArg and returns true
+  /// If requestThreadEnd is true returns false
 {
 	sem_wait(&availableWork);
+
+	if (requestThreadEnd) return false;
 
 	pthread_mutex_lock(&mutexQueue);
 		*workerArg = workerQueue.front();
@@ -148,5 +163,7 @@ void* ThreadPool::threadExecute(void* _pool)
 			pthread_cond_signal(&(pool->incompleteWorkCond));
 		}
 	}
+
+	pthread_exit(NULL);
 	return 0;
 }

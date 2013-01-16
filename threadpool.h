@@ -184,6 +184,9 @@ private:
 	  /// Number of UNFINISHED work units: this is NOT the number of items in
 	  /// the workerQueue
 
+	bool requestThreadEnd;
+	  /// Request thead workers to finish
+
 	std::vector<pthread_t*> threads;
 	  /// Collection of threads
 
